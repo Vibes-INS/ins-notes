@@ -16,7 +16,7 @@ try {
 }
 
 function App () {
-  const [folders, folderOperation] = useDb<Folder>('folder')
+  const [folders, folderOperation, folderDbStatus] = useDb<Folder>('folder')
   const [notes, noteOperation] = useDb<Note>('note')
   const [activeFolder, setActiveFolder] = useState<ActiveFolder>({
     id: -1,
@@ -38,22 +38,22 @@ function App () {
     setActiveNote,
     async onCreateFolder (name, options): Promise<void> {
       const folderId = await folderOperation.add({ name, noteCount: 0 })
-      const noteId = await noteOperation.add({ content: '', folderId })
       setActiveFolder({
         id: folderId,
         editing: Boolean(options?.editing)
-      })
-      setActiveNote({
-        id: noteId
       })
     }
   }
 
   useEffect(() => {
-    if (folders.length && activeFolder.id === -1) {
-      setActiveFolder({ ...activeFolder, id: folders[0].id })
+    if (!folderDbStatus.loading && activeFolder.id === -1) {
+      if (folders.length) {
+        setActiveFolder({ ...activeFolder, id: folders[0].id })
+      } else {
+        editContextValue.onCreateFolder('New Folder')
+      }
     }
-  }, [folders])
+  }, [folderDbStatus.loading])
 
   return (
     <main className="w-full h-screen m-auto flex">

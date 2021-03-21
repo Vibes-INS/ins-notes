@@ -95,8 +95,8 @@ const FolderItem: React.FC<FolderItemProps> = (props: FolderItemProps) => {
   }
 
   function onSave () {
-    setEditing(false)
     props.edit?.onChangeName(name)
+    setEditing(false)
   }
 
   useEffect(() => {
