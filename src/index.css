@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.hover-show-child .hover-child {
+    @apply invisible;
+}
+
+.hover-show-child:hover .hover-child {
+    @apply visible;
+}
+
+.min-w-side-bar {
+    min-width: 14rem;
+}
