@@ -14,7 +14,7 @@ const FolderSideBar: React.FC = () => {
     onUpdateFolderName
   } = useContext(NoteContext) as NoteContextValue
 
-  return <ul className="col-span-2 col-span bg-purple-50 h-screen w-full flex flex-col pt-4 overflow-y-auto relative">
+  return <ul className="col-span-2 col-span bg-purple-50 h-screen w-full flex flex-col pt-3 overflow-y-auto relative">
     {
       folders.map((folder, i) => <FolderItem
         name={folder.name}
@@ -43,9 +43,9 @@ interface FolderItemProps {
     editing: boolean
     onChangeName: (name: string) => void
   }
-  onDelete?: () => void
   active?: boolean
   onClick?: () => void
+  onDelete?: () => void
 }
 
 const FolderItem: React.FC<FolderItemProps> = (props: FolderItemProps) => {
@@ -69,27 +69,27 @@ const FolderItem: React.FC<FolderItemProps> = (props: FolderItemProps) => {
     if (event.code !== 'Enter') return
     onSave()
   }
-
   async function activateInput () {
     await setEditing(true)
     focusInput()
     menuOperation.deactivate()
   }
-
   function focusInput () {
     inputRef?.current?.focus()
     inputRef?.current?.select()
   }
-
   function onDelete () {
     if (!props.onDelete) return
     props.onDelete()
     menuOperation.deactivate()
   }
-
   function onSave () {
     props.edit?.onChangeName(name)
     setEditing(false)
+  }
+  function onContextMenu (event: React.MouseEvent<HTMLLIElement, MouseEvent>) {
+    event.preventDefault()
+    menuOperation.activate(event)
   }
 
   useEffect(() => {
@@ -98,7 +98,9 @@ const FolderItem: React.FC<FolderItemProps> = (props: FolderItemProps) => {
 
   return <li
     className={`px-3 mx-2 py-1.5 text-sm select-none cursor-pointer rounded flex hover-show-child relative ${activeClassName}`}
-    onClick={props.onClick}>
+    onClick={props.onClick}
+    onContextMenu={onContextMenu}
+  >
     <FontAwesomeIcon icon={faFolder} className="my-auto"/>
     {
       editing

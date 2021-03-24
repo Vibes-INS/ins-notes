@@ -76,7 +76,7 @@ const ToolsBar: React.FC<ToolsBarProps> = ({
     }
   }
 
-  return <header className="flex py-3 px-3 sticky top-0 left-0 w-full mb-2 border-b border-gray-200">
+  return <header className="flex py-3 px-3 sticky top-0 left-0 w-full mb-2 border-b border-gray-200 z-30">
     { onEdit && <FontAwesomeIcon
         icon={editing ? faSave : faEdit}
         className="mr-6 cursor-pointer"
@@ -95,7 +95,7 @@ const Renderer: React.FC<RendererProps> = ({ content }: RendererProps) => {
     .split('\n\n')
     .filter(x => x)
 
-  return <div className="absolute top-10 left-0 p-3 w-full h-full">
+  return <div className="absolute top-0 left-0 px-3 pt-14 pb-3 w-full h-full">
     {
       lines.length > 0
         ? lines.map((line, i) => <Paragraph key={i} content={line}/>)

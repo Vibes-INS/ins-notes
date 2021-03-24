@@ -90,7 +90,7 @@ function App () {
   }, [folderDbStatus.loading])
 
   return (
-    <main className="w-full h-screen m-auto flex">
+    <main className="w-full h-screen m-auto flex min-w-app overflow-x-auto">
       <NoteContext.Provider value={editContextValue}>
         <section className="w-1/5 min-w-side-bar">
           <FolderSideBar/>

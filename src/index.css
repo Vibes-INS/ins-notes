@@ -13,3 +13,7 @@
 .min-w-side-bar {
     min-width: 14rem;
 }
+
+.min-w-app {
+    min-width: 50rem;
+}
