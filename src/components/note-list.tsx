@@ -1,5 +1,5 @@
 import React, { useContext } from 'react'
-import { faEdit, faTrashAlt } from '@fortawesome/free-solid-svg-icons'
+import { faPlus, faTrashAlt } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import NoteContext, { NoteContextValue } from '../contexts/note-context'
 import { Note } from '../model/note.model'
@@ -23,35 +23,35 @@ const NoteList: React.FC<Props> = () => {
   const {
     notes,
     activeNote,
-    activeFolder,
     setActiveNote,
-    noteOperation
+    onDeleteNote,
+    onCreateNote
   } = useContext(NoteContext) as NoteContextValue
-  function onAddNote (content = '') {
-    noteOperation.add({ content, folderId: activeFolder.id }).then(id => {
-      setActiveNote({ id })
-    })
-  }
-  function onDeleteNote (id: number) {
-    noteOperation.del(id)
-  }
 
-  return <ul className="relative select-none">
-    <NoteHeader onAdd={onAddNote} onDelete={() => onDeleteNote(activeNote.id)}/>
+  return <ul className="relative select-none overflow-y-auto h-full pb-4">
+    <NoteHeader
+      onAdd={() => onCreateNote('')}
+      onDelete={notes.length ? () => onDeleteNote(activeNote.id) : undefined}/>
     {
       notes.map((note, i) => <NoteItem
         key={note.id + '' + i}
         note={note}
-        onClick={() => setActiveNote({ id: note.id })}
+        onClick={() => setActiveNote({ id: note.id, editing: false })}
         activated={activeNote.id === note.id}
       />)
+    }
+    {
+      notes.length === 0 &&
+        <div className="text-xl text-center absolute left-0 right-0 top-52 opacity-25">
+          No Notes
+        </div>
     }
   </ul>
 }
 
 const NoteItem: React.FC<NoteItemProps> = ({ note, activated, onClick }: NoteItemProps) => {
   const activatedClassName = activated
-    ? ' rounded-md bg-purple-500 text-white shadow-md'
+    ? 'rounded-md bg-purple-500 text-white shadow-md'
     : 'border-gray-100'
 
   return <li
@@ -65,8 +65,8 @@ const NoteItem: React.FC<NoteItemProps> = ({ note, activated, onClick }: NoteIte
 }
 
 const NoteHeader: React.FC<NoteHeaderProps> = ({ onAdd, onDelete }: NoteHeaderProps) => {
-  return <li className="flex py-3 px-6 sticky top-0 left-0 w-full hover:shadow-md mb-2">
-    { onAdd && <FontAwesomeIcon icon={faEdit} className="mr-4 cursor-pointer" onClick={() => onAdd()}/> }
+  return <li className="flex py-3 px-6 sticky top-0 left-0 w-full mb-2 border-b border-gray-200 bg-white">
+    { onAdd && <FontAwesomeIcon icon={faPlus} className="mr-6 cursor-pointer" onClick={() => onAdd()}/> }
     { onDelete && <FontAwesomeIcon icon={faTrashAlt} className="mr-4 cursor-pointer" onClick={() => onDelete()}/> }
   </li>
 }

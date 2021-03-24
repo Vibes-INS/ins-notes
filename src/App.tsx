@@ -23,25 +23,59 @@ function App () {
     editing: false
   })
   const [activeNote, setActiveNote] = useState<ActiveNote>({
-    id: -1
+    id: -1,
+    editing: false
   })
   const editContextValue: NoteContextValue = {
     folders,
     get notes (): Note[] {
       return notes.filter(note => note.folderId === activeFolder.id)
     },
-    folderOperation,
-    noteOperation,
     activeFolder,
     setActiveFolder,
     activeNote,
     setActiveNote,
-    async onCreateFolder (name, options): Promise<void> {
+    async onCreateFolder (name, options) {
       const folderId = await folderOperation.add({ name, noteCount: 0 })
       setActiveFolder({
         id: folderId,
         editing: Boolean(options?.editing)
       })
+      setActiveNote({
+        id: -1,
+        editing: false
+      })
+    },
+    async onDeleteFolder (key) {
+      await folderOperation.del(key).then(newFolders => {
+        if (key === activeFolder.id) {
+          const folder = newFolders[0]
+          const id = folder?.id === undefined ? -1 : folder.id
+          setActiveFolder({ id, editing: false })
+        }
+      })
+    },
+    async onUpdateFolderName (folder, name) {
+      folder.name = name
+      await folderOperation.update(folder)
+    },
+    async onCreateNote (content, options) {
+      const folderId = options?.folderId || activeFolder.id
+      if (!folders.find(folder => folder.id === folderId)) return
+      await noteOperation.add({ content, folderId }).then(id => {
+        setActiveNote({ id, editing: true })
+      })
+    },
+    async onDeleteNote (key) {
+      await noteOperation.del(key).then(newNotes => {
+        const note = newNotes[0]
+        const id = note?.id === undefined ? -1 : note.id
+        setActiveNote({ id, editing: false })
+      })
+    },
+    async onUpdateNoteContent (note, content) {
+      if (content) note.content = content
+      await noteOperation.update(note)
     }
   }
 
@@ -67,7 +101,7 @@ function App () {
         </section>
 
         <section className="w-3/5 h-full">
-          <NoteEditor/>
+          { activeFolder.id !== -1 && activeNote.id !== -1 && <NoteEditor/> }
         </section>
       </NoteContext.Provider>
     </main>

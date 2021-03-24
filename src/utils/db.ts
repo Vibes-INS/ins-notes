@@ -42,15 +42,14 @@ export function useDb<T = BaseDbItem> (store: Store): UseDbReturn<T> {
     return db.update(item).then(() => getAll())
   }
 
-  function add (item: Omit<T, 'id' | 'createdTime' | 'updatedTime'>) {
-    return db.add({
+  async function add (item: Omit<T, 'id' | 'createdTime' | 'updatedTime'>) {
+    const key = db.add({
       ...item,
       createdTime: new Date().toISOString(),
       updatedTime: new Date().toISOString()
-    }).then(id => {
-      getAll()
-      return id
     })
+    await getAll()
+    return key
   }
 
   function del (key: number) {

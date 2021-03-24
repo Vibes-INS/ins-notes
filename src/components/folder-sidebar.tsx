@@ -1,27 +1,20 @@
 import React, { useContext, useEffect, useRef, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faPlusSquare, faFolder, faSlidersH } from '@fortawesome/free-solid-svg-icons'
-import { Folder } from '../model/folder.model'
 import ContextMenu, { useMenu } from './context-menu'
 import NoteContext, { NoteContextValue } from '../contexts/note-context'
 
 const FolderSideBar: React.FC = () => {
   const {
     folders,
-    folderOperation,
     activeFolder,
     setActiveFolder,
-    onCreateFolder
+    onCreateFolder,
+    onDeleteFolder,
+    onUpdateFolderName
   } = useContext(NoteContext) as NoteContextValue
-  function onDeleteFolder (id: number) {
-    folderOperation.del(id)
-  }
-  function onUpdateFolderName (folder: Folder, name: string) {
-    folder.name = name
-    folderOperation.update(folder)
-  }
 
-  return <ul className="col-span-2 col-span bg-purple-50 h-screen w-full flex flex-col pt-4">
+  return <ul className="col-span-2 col-span bg-purple-50 h-screen w-full flex flex-col pt-4 overflow-y-auto relative">
     {
       folders.map((folder, i) => <FolderItem
         name={folder.name}
@@ -36,7 +29,7 @@ const FolderSideBar: React.FC = () => {
       />)
     }
 
-    <li className="px-3 mx-2 py-1.5 mb-3 text-sm select-none cursor-pointer text-gray-600 mt-auto"
+    <li className="px-5 py-3 mt-auto text-sm select-none cursor-pointer text-gray-600 sticky bottom-0 bg-purple-50 w-full border-gray-200 border-t"
         onClick={() => onCreateFolder(`New Folder (${folders.length})`, { editing: true })}>
       <FontAwesomeIcon icon={faPlusSquare}/>
       <span className="ml-2">New Folder</span>

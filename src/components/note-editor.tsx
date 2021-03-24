@@ -1,55 +1,131 @@
-import React, { useContext, useEffect, useState } from 'react'
+import React, { useContext, useEffect, useRef, useState } from 'react'
 import NoteContext, { NoteContextValue } from '../contexts/note-context'
-import { faCopy } from '@fortawesome/free-solid-svg-icons'
+import { faCheck, faCopy, faEdit, faSave } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { copy } from '../utils'
 
 const NoteEditor: React.FC = () => {
   const {
     notes,
     activeNote,
-    noteOperation
+    onUpdateNoteContent,
+    setActiveNote
   } = useContext(NoteContext) as NoteContextValue
   const [activeNoteContent, setActiveNoteContent] = useState(notes.find(note => note.id === activeNote.id))
-  const [inputFocus, setInputFocus] = useState(false)
-  const [contents, setContents] = useState<string[]>([])
+  const inputRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
-    const newActiveNoteContent = notes.find(note => note.id === activeNote.id)
-    setActiveNoteContent(newActiveNoteContent)
-    setContents(newActiveNoteContent?.content.split('\n\n') || [])
+    updateActiveNote().then(() => {
+      if (activeNote.editing) inputRef?.current?.focus()
+    })
   }, [activeNote])
-
-  useEffect(() => {
-    setContents(activeNoteContent?.content.split('\n\n') || [])
-  }, [inputFocus])
-
-  function updateNoteContent (event: React.ChangeEvent<HTMLTextAreaElement>) {
+  async function updateActiveNote () {
+    await setActiveNoteContent(notes.find(note => note.id === activeNote.id))
+  }
+  async function onChangeTextarea (content: string) {
     if (!activeNoteContent) return
-    const content = event.target.value
-    const activeNoteContentValue = { ...activeNoteContent, content }
-    setActiveNoteContent(activeNoteContentValue)
-    noteOperation.update(activeNoteContentValue)
+    setActiveNoteContent({ ...activeNoteContent, content })
+  }
+  async function onSave () {
+    if (activeNoteContent) {
+      await onUpdateNoteContent(activeNoteContent, activeNoteContent.content)
+    }
+  }
+  async function onFocus () {
+    await setActiveNote({ ...activeNote, editing: true })
+    inputRef?.current?.focus()
   }
 
-  const textareaClassname = inputFocus ? '' : 'opacity-0'
-  return <div className="w-full h-full p-3 relative">
+  const textareaClassname = activeNote.editing ? '' : 'opacity-0'
+  return <div className="w-full h-full relative max-h-full flex flex-col">
+    <ToolsBar
+      onEdit={() => onFocus()}
+      editing={activeNote.editing}
+      setEditing={() => setActiveNote({ ...activeNote, editing: false })}/>
     {
       activeNote && <textarea
-          className={`w-full h-full resize-none p-2 appearance-none outline-none text-sm ${textareaClassname}`}
+          className={`w-full h-full resize-none p-3 appearance-none outline-none text-sm ${textareaClassname}`}
+          ref={inputRef}
           value={activeNoteContent?.content || ''}
-          onFocus={() => setInputFocus(true)}
-          onBlur={() => setInputFocus(false)}
-          onChange={updateNoteContent}/>
+          onChange={event => onChangeTextarea(event.target.value)}
+          placeholder="Please input the content"
+          onBlur={onSave}/>
     }
     {
-      !inputFocus && <div className="absolute top-0 left-0 p-5 pointer-events-none">{
-        contents.map((content, i) => <p key={i} className="mb-2 text-gray-600 text-sm">
-          {content}
-          <FontAwesomeIcon icon={faCopy} className="ml-2 cursor-pointer"/>
-        </p>)
-      }</div>
+      !activeNote.editing && <Renderer content={activeNoteContent?.content || ''}/>
     }
   </div>
+}
+
+interface ToolsBarProps {
+  onEdit?: () => void
+  editing?: boolean
+  setEditing?: (editing: boolean) => void
+}
+
+const ToolsBar: React.FC<ToolsBarProps> = ({
+  onEdit,
+  editing,
+  setEditing
+}: ToolsBarProps) => {
+  function onClick () {
+    if (editing && setEditing) {
+      setEditing(false)
+    } else if (onEdit) {
+      onEdit()
+    }
+  }
+
+  return <header className="flex py-3 px-3 sticky top-0 left-0 w-full mb-2 border-b border-gray-200">
+    { onEdit && <FontAwesomeIcon
+        icon={editing ? faSave : faEdit}
+        className="mr-6 cursor-pointer"
+        onClick={onClick}
+    /> }
+  </header>
+}
+
+interface RendererProps {
+  content: string
+}
+
+const Renderer: React.FC<RendererProps> = ({ content }: RendererProps) => {
+  const lines = content
+    .trim()
+    .split('\n\n')
+    .filter(x => x)
+
+  return <div className="absolute top-10 left-0 p-3 w-full h-full">
+    {
+      lines.length > 0
+        ? lines.map((line, i) => <Paragraph key={i} content={line}/>)
+        : <div className="opacity-25 pointer-events-none absolute left-0 right-0 text-center py-4">
+            No Content
+          </div>
+    }
+  </div>
+}
+
+interface ParagraphProps {
+  content: string
+}
+
+const Paragraph: React.FC<ParagraphProps> = ({ content }: ParagraphProps) => {
+  const [copySucceeded, setCopySucceeded] = useState(false)
+  async function onCopy (line: string) {
+    copy(line)
+    setCopySucceeded(true)
+    setTimeout(() => setCopySucceeded(false), 3000)
+  }
+
+  return <p className="mb-2 text-gray-600 text-sm whitespace-pre-wrap break-all">
+    { content }
+    <FontAwesomeIcon
+      icon={copySucceeded ? faCheck : faCopy}
+      className="ml-2 cursor-pointer inline-block"
+      onClick={() => onCopy(content)}
+    />
+  </p>
 }
 
 export default NoteEditor
