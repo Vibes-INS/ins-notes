@@ -1,29 +1,32 @@
 import React, { useEffect, useState } from 'react'
-import { initDB } from 'react-indexed-db'
-
-import { config as DbConfig } from './model/config'
 import FolderSideBar from './components/folder-sidebar'
-import { Folder } from './model/folder.model'
-import { useDb } from './utils/db'
+import { Folder } from './interfaces/folder.interface'
 import NoteContext, { ActiveFolder, ActiveNote, NoteContextValue } from './contexts/note-context'
 import NoteList from './components/note-list'
-import { Note } from './model/note.model'
+import { Note } from './interfaces/note.interface'
 import NoteEditor from './components/note-editor'
+import localforage from 'localforage'
+import ObjectID from 'bson-objectid'
 
-try {
-  initDB(DbConfig)
-} catch {
-}
+const folderStore = localforage.createInstance({
+  name: 'folder'
+})
+
+const noteStore = localforage.createInstance({
+  name: 'note'
+})
 
 function App () {
-  const [folders, folderOperation, folderDbStatus] = useDb<Folder>('folder')
-  const [notes, noteOperation] = useDb<Note>('note')
+  const [folders, setFolders] = useState<Folder[]>([])
+  const [folderLoading, setFolderLoading] = useState(true)
+  const [notes, setNotes] = useState<Note[]>([])
+
   const [activeFolder, setActiveFolder] = useState<ActiveFolder>({
-    id: -1,
+    id: '',
     editing: false
   })
   const [activeNote, setActiveNote] = useState<ActiveNote>({
-    id: -1,
+    id: '',
     editing: false
   })
   const editContextValue: NoteContextValue = {
@@ -36,58 +39,93 @@ function App () {
     activeNote,
     setActiveNote,
     async onCreateFolder (name, options) {
-      const folderId = await folderOperation.add({ name, noteCount: 0 })
+      const insertFolder: Folder = {
+        id: new ObjectID().toHexString(),
+        name,
+        noteCount: 0,
+        createdTime: new Date().toISOString(),
+        updatedTime: new Date().toISOString()
+      }
+
+      await folderStore.setItem(insertFolder.id, insertFolder)
+      setFolders([...folders, insertFolder])
       setActiveFolder({
-        id: folderId,
+        id: insertFolder.id,
         editing: Boolean(options?.editing)
       })
       setActiveNote({
-        id: -1,
+        id: '',
         editing: false
       })
     },
     async onDeleteFolder (key) {
-      await folderOperation.del(key).then(newFolders => {
-        if (key === activeFolder.id) {
-          const folder = newFolders[0]
-          const id = folder?.id === undefined ? -1 : folder.id
-          setActiveFolder({ id, editing: false })
-        }
-      })
+      await folderStore.removeItem(key)
+      const removedFolders = folders.filter(folder => folder.id !== key)
+      setFolders(removedFolders)
+      const activeFolder = removedFolders[0]
+      setActiveFolder({ id: activeFolder?.id, editing: false })
     },
     async onUpdateFolderName (folder, name) {
       folder.name = name
-      await folderOperation.update(folder)
+      await folderStore.setItem(folder.id, folder)
+      setFolders([...folders])
     },
     async onCreateNote (content, options) {
       const folderId = options?.folderId || activeFolder.id
       if (!folders.find(folder => folder.id === folderId)) return
-      await noteOperation.add({ content, folderId }).then(id => {
-        setActiveNote({ id, editing: true })
-      })
+      const insertNote: Note = {
+        id: new ObjectID().toHexString(),
+        folderId,
+        content,
+        createdTime: new Date().toISOString(),
+        updatedTime: new Date().toISOString()
+      }
+
+      await noteStore.setItem(insertNote.id, insertNote)
+      setNotes([...notes, insertNote])
+      setActiveNote({ id: insertNote.id, editing: true })
     },
     async onDeleteNote (key) {
-      await noteOperation.del(key).then(newNotes => {
-        const note = newNotes[0]
-        const id = note?.id === undefined ? -1 : note.id
-        setActiveNote({ id, editing: false })
-      })
+      await noteStore.removeItem(key)
+      const removedNotes = notes.filter(note => note.id === key)
+      setNotes(removedNotes)
+      const activeNote = removedNotes[0]
+      setActiveNote({ id: activeNote.id, editing: false })
     },
     async onUpdateNoteContent (note, content) {
-      if (content) note.content = content
-      await noteOperation.update(note)
+      await noteStore.setItem(note.id, note)
+      notes.forEach(n => {
+        if (n.id === note.id && content) {
+          n.content = content
+        }
+      })
+      setNotes([...notes])
     }
   }
 
   useEffect(() => {
-    if (!folderDbStatus.loading && activeFolder.id === -1) {
+    (async () => {
+      const readFolders: Folder[] = []
+      await folderStore.iterate<Folder, void>(value => readFolders.push(value))
+      setFolders(readFolders)
+      setFolderLoading(false)
+    })()
+    ;(async () => {
+      const readNotes: Note[] = []
+      await noteStore.iterate<Note, void>(value => readNotes.push(value))
+      setNotes(readNotes)
+    })()
+  }, [])
+
+  useEffect(() => {
+    if (!folderLoading && !activeFolder.id) {
       if (folders.length) {
         setActiveFolder({ ...activeFolder, id: folders[0].id })
       } else {
         editContextValue.onCreateFolder('New Folder')
       }
     }
-  }, [folderDbStatus.loading])
+  }, [folderLoading])
 
   return (
     <main className="w-full h-screen m-auto flex min-w-app overflow-x-auto">
@@ -97,11 +135,11 @@ function App () {
         </section>
 
         <section className="w-1/5 border-r border-gray-200 min-w-side-bar">
-          { activeFolder.id !== -1 && <NoteList/> }
+          { activeFolder.id && <NoteList/> }
         </section>
 
         <section className="w-3/5 h-full">
-          { activeFolder.id !== -1 && activeNote.id !== -1 && <NoteEditor/> }
+          { activeFolder.id && activeNote.id && <NoteEditor/> }
         </section>
       </NoteContext.Provider>
     </main>

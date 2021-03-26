@@ -10,10 +10,11 @@
     "@fortawesome/fontawesome-svg-core": "^1.2.34",
     "@fortawesome/free-solid-svg-icons": "^5.15.2",
     "@fortawesome/react-fontawesome": "^0.1.14",
+    "bson-objectid": "^2.0.1",
+    "localforage": "^1.9.0",
     "moment": "^2.29.1",
     "react": "^17.0.0",
-    "react-dom": "^17.0.0",
-    "react-indexed-db": "^1.0.12"
+    "react-dom": "^17.0.0"
   },
   "devDependencies": {
     "@types/react": "^17.0.0",

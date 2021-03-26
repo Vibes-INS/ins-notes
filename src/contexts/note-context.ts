@@ -1,14 +1,14 @@
-import { Folder } from '../model/folder.model'
+import { Folder } from '../interfaces/folder.interface'
 import React from 'react'
-import { Note } from '../model/note.model'
+import { Note } from '../interfaces/note.interface'
 
 export interface ActiveFolder {
-  id: number
+  id: string
   editing: boolean
 }
 
 export interface ActiveNote {
-  id: number
+  id: string
   editing: boolean
 }
 
@@ -20,11 +20,11 @@ export interface NoteContextValue {
   activeNote: ActiveNote
   setActiveNote: React.Dispatch<React.SetStateAction<ActiveNote>>
   onCreateFolder: (name: string, options?: { editing?: boolean }) => Promise<void>
-  onDeleteFolder: (key: number) => Promise<void>
+  onDeleteFolder: (key: string) => Promise<void>
   onUpdateFolderName: (folder: Folder, name: string) => Promise<void>
   onUpdateNoteContent: (note: Note, content?: string) => Promise<void>
-  onCreateNote: (content: string, options?: { folderId?: number }) => Promise<void>
-  onDeleteNote: (key: number) => Promise<void>
+  onCreateNote: (content: string, options?: { folderId?: string }) => Promise<void>
+  onDeleteNote: (key: string) => Promise<void>
 }
 
 const NoteContext = React.createContext<NoteContextValue | null>(null)

@@ -2,7 +2,7 @@ import React, { useContext } from 'react'
 import { faPlus, faTrashAlt } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import NoteContext, { NoteContextValue } from '../contexts/note-context'
-import { Note } from '../model/note.model'
+import { Note } from '../interfaces/note.interface'
 import moment from 'moment'
 
 export interface Props {
